@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programa — XII EEAA 2026</title>
+<style>
+  :root{
+    --bg:#0A101E;
+    --bg-raised:#121B30;
+    --bg-cell:#101828;
+    --bg-head:#1A2440;
+    --ink:#E9EDF5;
+    --muted:#8E9BB3;
+    --accent:#E4B15C;
+    --accent-dim:rgba(228,177,92,.35);
+    --line:rgba(142,155,179,.22);
+    --serif:"Palatino Linotype",Palatino,"Iowan Old Style","Book Antiqua",Georgia,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  /* Diseño comprometido con un solo mundo visual: cielo nocturno */
+  html{background:var(--bg)}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.5;
+    margin:0;
+  }
+  #sky{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 20px 80px}
+
+  header{padding:60px 0 40px;text-align:center}
+  .eyebrow{
+    font-size:.75rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 18px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:500;font-size:clamp(1.8rem,4.5vw,2.7rem);
+    line-height:1.15;margin:0 0 16px;text-wrap:balance;
+  }
+  h1 .roman{color:var(--accent)}
+  .meta{color:var(--muted);font-size:.95rem;margin:0}
+  .meta strong{color:var(--ink);font-weight:600}
+  .meta span{white-space:nowrap}
+
+  /* ── Horario tipo tabla ─────────────────────────── */
+  .board{
+    border:1px solid var(--line);border-radius:12px;
+    background:rgba(16,24,40,.72);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  table{
+    border-collapse:collapse;width:100%;min-width:980px;
+    font-size:.86rem;
+  }
+  th,td{
+    border:1px solid var(--line);
+    padding:12px 14px;vertical-align:top;text-align:left;
+  }
+  thead th{
+    background:var(--bg-head);
+    padding:14px;
+  }
+  thead .dow{
+    display:block;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:4px;
+  }
+  thead .theme{
+    display:block;font-family:var(--serif);font-weight:500;font-size:1.02rem;
+    line-height:1.25;color:var(--ink);text-wrap:balance;
+  }
+  th.hora-col{width:86px;background:var(--bg-head)}
+  td.hora,th.hora{
+    background:var(--bg-head);
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+    color:var(--accent);font-size:.85rem;font-weight:600;
+    width:86px;
+    position:sticky;left:0;z-index:1;
+  }
+  thead th.hora-col{position:sticky;left:0;z-index:2}
+  tbody td{background:var(--bg-cell)}
+  .speaker{
+    display:block;font-weight:650;color:var(--accent);
+    font-size:.84rem;margin-bottom:3px;
+  }
+  .talk{display:block;color:var(--ink);line-height:1.4}
+  .at{
+    display:inline-block;font-variant-numeric:tabular-nums;
+    color:var(--muted);font-size:.75rem;margin-bottom:4px;
+  }
+  .cell-item + .cell-item{
+    margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);
+  }
+  .badge{
+    display:inline-block;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--bg);background:var(--accent);border-radius:3px;padding:1px 7px;
+    font-weight:700;margin-bottom:6px;
+  }
+  tr.break-row td{
+    background:rgba(26,36,64,.55);
+    text-align:center;color:var(--muted);
+    font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;
+    padding:8px;
+  }
+  td.milestone{background:rgba(228,177,92,.08)}
+  td.milestone .talk{font-family:var(--serif);font-size:.95rem;color:var(--accent)}
+  td.empty{background:rgba(16,24,40,.35)}
+  .scroll-hint{
+    display:none;color:var(--muted);font-size:.78rem;text-align:center;margin:10px 0 0;
+  }
+  @media (max-width:1020px){.scroll-hint{display:block}}
+
+  /* ── Resúmenes ──────────────────────────────────── */
+  .resumenes{max-width:800px;margin:64px auto 0}
+  .resumenes>h2{
+    font-family:var(--serif);font-weight:500;font-size:1.5rem;margin:0 0 6px;
+  }
+  .resumenes>p{color:var(--muted);font-size:.9rem;margin:0 0 22px}
+  details{border-top:1px solid var(--line)}
+  details:last-of-type{border-bottom:1px solid var(--line)}
+  summary{
+    cursor:pointer;list-style:none;padding:13px 4px;user-select:none;
+    display:flex;gap:12px;align-items:baseline;
+    transition:color .15s;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary .when{
+    font-variant-numeric:tabular-nums;color:var(--accent);
+    font-size:.78rem;white-space:nowrap;min-width:74px;
+  }
+  summary .t{font-size:.92rem;line-height:1.4}
+  summary .t b{font-weight:650}
+  summary:hover .t,summary:focus-visible .t{color:var(--accent)}
+  summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .abstract{
+    margin:0 0 16px 86px;padding:14px 18px;font-size:.9rem;color:#C3CBDA;
+    background:var(--bg-raised);border-left:2px solid var(--accent-dim);
+    border-radius:0 8px 8px 0;
+  }
+  .abstract p{margin:0 0 10px}
+  .abstract p:last-child{margin-bottom:0}
+  @media (max-width:560px){
+    summary{flex-direction:column;gap:2px}
+    .abstract{margin-left:0}
+  }
+
+  footer{
+    max-width:800px;margin:64px auto 0;border-top:1px solid var(--line);
+    padding-top:30px;color:var(--muted);font-size:.88rem;
+  }
+  footer p{margin:0 0 8px}
+  footer a{color:var(--accent);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+  .org{font-family:var(--serif);color:var(--ink);font-size:1rem}
+</style>
+</head>
+<body>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Programa completo de actividades</p>
+  <h1><span class="roman">XII</span> Escuela Ecuatoriana de Astronomía y Astrofísica</h1>
+  <p class="meta"><strong>3 – 7 de agosto de 2026</strong> · <span>Auditorio 1 EARME</span> · <span>Escuela Politécnica Nacional</span> · <span>Modalidad híbrida</span></p>
+</header>
+
+<div class="board" role="region" aria-label="Horario semanal" tabindex="0">
+<table>
+  <thead>
+    <tr>
+      <th class="hora-col" scope="col">Hora</th>
+      <th scope="col"><span class="dow">Lunes 03</span><span class="theme">Relatividad y Cosmología</span></th>
+      <th scope="col"><span class="dow">Martes 04</span><span class="theme">Exoplanetas y Observación Astronómica</span></th>
+      <th scope="col"><span class="dow">Miércoles 05</span><span class="theme">Centro Galáctico y Workshops</span></th>
+      <th scope="col"><span class="dow">Jueves 06</span><span class="theme">Simulaciones</span></th>
+      <th scope="col"><span class="dow">Viernes 07</span><span class="theme">Clima Espacial y Pósters</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="hora">09:00<br>10:00</td>
+      <td>
+        <div class="cell-item milestone-inline">
+          <span class="at">09:00</span>
+          <span class="talk" style="font-family:var(--serif);color:var(--accent)">Inauguración</span>
+        </div>
+        <div class="cell-item">
+          <span class="at">09:20</span>
+          <span class="speaker">PhD. Ericson López</span>
+          <span class="talk">Halos galácticos de materia oscura como fluidos politrópicos autogravitantes</span>
+        </div>
+      </td>
+      <td>
+        <span class="speaker">MSc. Hugo Barbier</span>
+        <span class="talk">La Luna: cuatro mil quinientos millones de años de historia geológica</span>
+      </td>
+      <td>
+        <span class="speaker">PhD. Jairo Armijos</span>
+        <span class="talk">La Zona Molecular Central de la Vía Láctea</span>
+      </td>
+      <td>
+        <span class="speaker">MSc. Nicolás Calero</span>
+        <span class="talk">Simulaciones de trayectorias nulas alrededor de objetos compactos con simetría axial</span>
+      </td>
+      <td>
+        <span class="speaker">Fís. Julio Loor &amp; Fís. David Chóez</span>
+        <span class="talk">Métodos modernos en el estudio de Núcleos Galácticos Activos (AGNs)</span>
+      </td>
+    </tr>
+    <tr class="break-row">
+      <td class="hora">10:00<br>10:20</td>
+      <td colspan="5">☕ Coffee break</td>
+    </tr>
+    <tr>
+      <td class="hora">10:20<br>11:20</td>
+      <td>
+        <span class="at">10:30</span>
+        <span class="speaker">MSc. Cristian Panchana</span>
+        <span class="talk">Afectación del cambio de suelo en la atmósfera cercana a la superficie de Marte</span>
+      </td>
+      <td>
+        <span class="speaker">PhD. Romina Petrucci</span>
+        <span class="talk">El impacto de la actividad magnética estelar en planetas de tipo Tierra: las enanas ultra-frías</span>
+      </td>
+      <td>
+        <span class="badge">Workshop 1</span>
+        <span class="talk">Pronóstico del Campo Geomagnético mediante Redes Neuronales de Grafos: IA aplicada al Clima Espacial en Ecuador</span>
+      </td>
+      <td>
+        <span class="speaker">PhD. Franklin Aldás</span>
+        <span class="talk">Simulaciones cosmológicas</span>
+      </td>
+      <td class="milestone">
+        <span class="talk">Sesión de Pósters</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="hora">11:20<br>12:20</td>
+      <td>
+        <span class="at">11:30</span>
+        <span class="speaker">PhD. Andrés Aceña</span>
+        <span class="talk">Agujeros negros, carga eléctrica y el imposible límite extremo</span>
+      </td>
+      <td>
+        <span class="speaker">Fís. Adrián Manzaba</span>
+        <span class="talk">Radio interferómetro de dos elementos con antenas Yagi-Uda</span>
+      </td>
+      <td>
+        <div class="cell-item">
+          <span class="badge">Workshop 2</span>
+          <span class="talk">Taller de Astrofotografía</span>
+        </div>
+        <div class="cell-item">
+          <span class="badge">Workshop 3</span>
+          <span class="talk">Taller de Radiometría Solar</span>
+        </div>
+      </td>
+      <td>
+        <span class="speaker">PhD. Ilse Plauchu</span>
+        <span class="talk">El Observatorio Astronómico Nacional San Pedro Mártir y el telescopio robótico SAINT-EX</span>
+      </td>
+      <td class="milestone">
+        <span class="talk">Clausura de la Escuela</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="hora">15:00</td>
+      <td class="empty"></td>
+      <td class="empty"></td>
+      <td class="milestone">
+        <span class="talk">Visita al Observatorio Astronómico de Quito</span>
+      </td>
+      <td class="empty"></td>
+      <td class="empty"></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p class="scroll-hint">Desliza la tabla hacia los lados para ver todos los días →</p>
+
+<section class="resumenes">
+  <h2>Resúmenes de las charlas</h2>
+  <p>Toca cualquier charla para ver su resumen.</p>
+
+  <details>
+    <summary><span class="when">Lun · 09:20</span><span class="t"><b>PhD. Ericson López</b> — Halos galácticos de materia oscura como fluidos politrópicos autogravitantes <i>(Observatorio Astronómico de Quito)</i></span></summary>
+    <div class="abstract"><p>Se presenta un modelo clásico de halos galácticos de materia oscura descritos como fluidos autogravitantes en equilibrio hidrostático con una ecuación de estado politrópica. La estructura del halo se obtiene resolviendo conjuntamente la ecuación de Poisson y las ecuaciones de equilibrio, lo que permite determinar perfiles de densidad, masa y velocidad de rotación. Este enfoque proporciona una descripción físicamente fundamentada de los halos de materia oscura, como alternativa a los perfiles empíricos tradicionales.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Lun · 10:30</span><span class="t"><b>MSc. Cristian Panchana</b> — Afectación del cambio de suelo en la atmósfera cercana a la superficie de Marte <i>(ESPOCH)</i></span></summary>
+    <div class="abstract"><p>Estudio del cráter Gale en Marte, donde el rover Curiosity de la NASA, mediante el instrumento meteorológico REMS, ha recolectado datos durante casi diez años. El estudio procesó estos datos y los correlacionó con las capas geológicas atravesadas por el rover, determinando que existe un vínculo entre las rocas de la superficie y parámetros como la humedad relativa, la temperatura del suelo y la temperatura del aire, con variaciones importantes al pasar de un tipo de roca a otro.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Lun · 11:30</span><span class="t"><b>PhD. Andrés Aceña</b> — Agujeros negros, carga eléctrica y el imposible límite extremo <i>(UNCuyo / CONICET, Argentina)</i></span></summary>
+    <div class="abstract"><p>Una de las predicciones más relevantes de la Relatividad General es la existencia de agujeros negros, incluidos aquellos con carga eléctrica. Las mismas ecuaciones también predicen singularidades desnudas cuando un agujero negro adquiere demasiada carga. La charla abordará los agujeros negros cargados, los límites de carga eléctrica que pueden contener, sus posibles mecanismos de formación y por qué el límite extremo — la frontera entre agujeros negros y singularidades desnudas — parece cada vez más difícil de alcanzar.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mar · 09:00</span><span class="t"><b>MSc. Hugo Barbier</b> — La Luna: cuatro mil quinientos millones de años de historia geológica <i>(Escuela Politécnica Nacional)</i></span></summary>
+    <div class="abstract"><p>La Luna constituye un verdadero archivo de la historia del Sistema Solar. Desde las primeras observaciones telescópicas hasta las misiones Apolo, nuestra visión de ella ha evolucionado profundamente. La conferencia recorrerá las principales etapas de su exploración, con énfasis en los descubrimientos realizados por los astronautas entre 1969 y 1972: las muestras de rocas, los experimentos en su superficie y las observaciones geológicas que permiten comprender cómo se formó y evolucionó durante más de cuatro mil millones de años.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mar · 10:20</span><span class="t"><b>PhD. Romina Petrucci</b> — El impacto de la actividad magnética estelar en planetas de tipo Tierra: el caso de las enanas ultra-frías <i>(OAC / CONICET, Argentina)</i></span></summary>
+    <div class="abstract"><p>Las enanas ultra-frías son objetos puramente convectivos con temperaturas efectivas menores o cercanas a 3000 K. Comprenden estrellas de muy baja masa y enanas marrones, alrededor de las cuales resulta más probable detectar planetas de tipo Tierra en zonas habitables. Se presentará una revisión de las investigaciones sobre la actividad magnética y la variabilidad fotométrica de estos objetos, y su relación con las posibilidades de surgimiento y desarrollo de vida en los planetas que albergan.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mar · 11:20</span><span class="t"><b>Fís. Adrián Manzaba</b> — Radio interferómetro de dos elementos con antenas Yagi-Uda <i>(INAOE, México)</i></span></summary>
+    <div class="abstract"><p>La radiointerferometría permite combinar las señales de dos o más antenas separadas físicamente para funcionar como un radiotelescopio de mayor tamaño y alcanzar mejores resoluciones angulares. La charla explicará las bases de esta técnica — utilizada por la colaboración Event Horizon Telescope para obtener la primera imagen de un agujero negro — así como el diseño y construcción de un radiointerferómetro instalado en el Instituto de Radioastronomía y Astrofísica, en Michoacán, México.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mié · 09:00</span><span class="t"><b>PhD. Jairo Armijos</b> — La Zona Molecular Central de la Vía Láctea <i>(Observatorio Astronómico de Quito)</i></span></summary>
+    <div class="abstract"><p>El agujero negro supermasivo Sgr A* se encuentra en una región central de aproximadamente 1200 por 300 años luz denominada Zona Molecular Central. Aunque ocupa una pequeña fracción de la Vía Láctea, esta región parece desempeñar un papel fundamental en su estructura y evolución. Se presentarán descubrimientos recientes realizados en esta zona — algunos con posibles efectos en regiones más externas de la Galaxia — en los cuales han participado investigadores del Observatorio Astronómico de Quito.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mié · 10:20</span><span class="t"><b>Workshop 1</b> — Pronóstico del Campo Geomagnético mediante Redes Neuronales de Grafos</span></summary>
+    <div class="abstract"><p>El taller aborda la predicción a corto plazo de las fluctuaciones acopladas del campo magnético terrestre para mitigar riesgos del clima espacial. Utilizando datos simulados de alta resolución de la estación ecuatoriana MAGDAS, se enseñará a representar estas componentes como nodos de un grafo mediante Redes Neuronales de Grafos (GNN) y Redes Convolucionales Temporales (TCN), explicando la necesidad física del filtrado de datos y cómo esta arquitectura supera a los modelos secuenciales y lineales tradicionales.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mié · 11:20</span><span class="t"><b>Workshop 2</b> — Taller de Astrofotografía</span></summary>
+    <div class="abstract"><p>Orientado al procesamiento y apilamiento (stacking) de imágenes astronómicas. Los participantes adquirirán herramientas prácticas para mejorar la calidad de sus capturas mediante técnicas computacionales especializadas, fortaleciendo sus competencias en el tratamiento digital de datos obtenidos a partir de observaciones del cielo.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Mié · 11:20</span><span class="t"><b>Workshop 3</b> — Taller de Radiometría Solar</span></summary>
+    <div class="abstract"><p>En este taller práctico, los participantes utilizarán el radiotelescopio del Observatorio Astronómico de Quito para registrar el paso del Sol a través del haz de una antena parabólica. Midiendo la potencia de radio recibida a 1420 MHz, se construirá una curva de tránsito solar y se determinará experimentalmente el ancho angular del haz del radiotelescopio, analizando la resolución del instrumento y la posibilidad de estimar el diámetro angular del Sol.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Jue · 09:00</span><span class="t"><b>MSc. Nicolás Calero</b> — Simulaciones de trayectorias nulas alrededor de objetos compactos con simetría axial <i>(Universidad de Salamanca, España)</i></span></summary>
+    <div class="abstract"><p>Estudio teórico y numérico del comportamiento de los rayos de luz cerca de objetos compactos, la apariencia óptica y la formación de sombras de agujeros negros. Se comparan los espacios-tiempo de Schwarzschild y Kerr mediante simulaciones, incluyendo efectos de rotación, arrastre de referencia, discos delgados de acreción y mapas de intensidad, empleando Mathematica y Python para la resolución de ecuaciones diferenciales y la generación de imágenes simuladas.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Jue · 11:20</span><span class="t"><b>PhD. Ilse Plauchu</b> — El Observatorio San Pedro Mártir y el telescopio robótico SAINT-EX <i>(OAN-SPM / UNAM, México)</i></span></summary>
+    <div class="abstract"><p>Visión general del Observatorio Astronómico Nacional en la Sierra San Pedro Mártir, uno de los principales sitios para la investigación astronómica en México: sus características observacionales, su infraestructura científica y las actividades de apoyo a la investigación. Se abordará además el proyecto SAINT-EX, un telescopio robótico dedicado a la búsqueda y caracterización de exoplanetas alrededor de estrellas ultrafrías: su funcionamiento, operación remota y algunos de sus resultados científicos.</p></div>
+  </details>
+
+  <details>
+    <summary><span class="when">Vie · 09:00</span><span class="t"><b>Fís. Julio Loor &amp; Fís. David Chóez</b> — Métodos modernos en el estudio de Núcleos Galácticos Activos (AGNs) <i>(Observatorio Astronómico de Quito)</i></span></summary>
+    <div class="abstract"><p>Los Núcleos Galácticos Activos constituyen algunos de los objetos más energéticos del universo y desempeñan un papel fundamental en la evolución de las galaxias. Se presentará una visión general de técnicas observacionales y métodos de análisis actuales: caracterización de la estructura y propiedades físicas de galaxias anfitrionas, técnicas de polarimetría para investigar campos magnéticos y medios magnetizados, y el papel del estudio multifrecuencia en la comprensión de los mecanismos de emisión de los AGNs.</p></div>
+  </details>
+</section>
+
+<footer>
+  <p class="org">Observatorio Astronómico de Quito · Escuela Politécnica Nacional</p>
+  <p>Interior del Parque La Alameda, Av. Gran Colombia S/N y Av. Diez de Agosto · (02) 297-6300 ext. 6801</p>
+  <p>Evento gratuito en modalidad híbrida. Información e inscripciones en el sitio oficial: <a href="https://oaq.epn.edu.ec/esastrofisica/" rel="noopener">oaq.epn.edu.ec/esastrofisica</a></p>
+</footer>
+</div>
+
+<script>
+(function(){
+  var c=document.getElementById('sky'),x=c.getContext('2d');
+  function draw(){
+    var w=c.width=innerWidth*devicePixelRatio,h=c.height=innerHeight*devicePixelRatio;
+    x.clearRect(0,0,w,h);
+    var n=Math.floor(w*h/22000),s=1103515245,m=2147483648,seed=42;
+    function rnd(){seed=(s*seed+12345)%m;return seed/m}
+    for(var i=0;i<n;i++){
+      var px=rnd()*w,py=rnd()*h,r=rnd()*1.1*devicePixelRatio+.3,a=rnd()*.5+.12;
+      x.beginPath();x.arc(px,py,r,0,6.284);
+      x.fillStyle='rgba(233,237,245,'+a.toFixed(2)+')';x.fill();
+    }
+  }
+  draw();addEventListener('resize',draw);
+})();
+</script>
+
+</body>
+</html>
